@@ -15,13 +15,7 @@ This codebase is a C port derived from the FORTRAN source of **Zork 2.6**.
 
 ## Installation
 
-### Building from Source
-
-To build the game from the source files in this repository:
-
-```bash
-make
-```
+For classic command-line/OS deployment, see the upstream project at [devshane/zork](https://github.com/devshane/zork).
 
 ### iOS
 
