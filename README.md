@@ -23,16 +23,32 @@ An iOS app is included in the `ZorkIOS/` directory. Open
 `ZorkIOS/ZorkIOS.xcodeproj` in Xcode, set your Development Team in the
 project's Signing & Capabilities settings, and build to a simulator or device.
 
-The app wraps the C source in this repository directly — no duplication of game
-files. Two minimal changes to the C source were required:
+The legacy C sources at the repository root are **byte-identical to upstream**
+([devshane/zork](https://github.com/devshane/zork)) — no edits required. iOS
+support is layered on as a Swift Package (`Package.swift` at the repo root):
 
-- **`dmain.c`**: `main()` renamed to `dungeon_main()` so it does not conflict
-  with the iOS app's own entry point.
-- **`supp.c`**: `exit_()` changed to call `longjmp` back to the iOS bridge
-  instead of calling `exit(0)`, which would terminate the app.
+- **`Sources/CDungeon/`** — a single iOS-only C file (`ios_bridge.c`) plus a
+  public umbrella header (`include/CDungeon.h`). The bridge owns the iOS
+  entry point and stdio, leaving the upstream `.c`/`.h` files untouched.
+- **`Sources/ZorkUI/`** — a SwiftUI library that imports `CDungeon` and exposes
+  a single root view, `ZorkGameView`, ready to drop into a `WindowGroup`.
 
-The iOS-specific bridge code lives entirely in `ZorkIOS/Sources/ZorkIOS/` and
-does not affect the command-line build.
+Two compile/link tricks let the unmodified upstream code coexist with iOS:
+
+- **`-Dmain=dungeon_main`** in the C target's settings rewrites `dmain.c`'s
+  `void main(...)` at preprocess time, avoiding a clash with the host app's
+  own entry point.
+- **Symbol shadowing in `ios_bridge.c`** provides our own `printf`, `puts`,
+  `putchar`, and `exit`. Darwin's two-level namespace ensures these only
+  affect calls inside the linked game code; libSystem callers are unaffected.
+  The `exit` shim `longjmp`s back to the bridge so the host app keeps running
+  after the game ends, replacing what used to require a source edit in
+  `supp.c`.
+
+The Xcode app target (`ZorkIOS/ZorkIOS.xcodeproj`) is a thin SwiftUI shell that
+depends on the local Swift package and bundles `dtextc.dat`. None of this
+affects the command-line build, which continues to use the unmodified
+`Makefile` and the upstream `dmain.c` / `supp.c`.
 
 
 ## Modern Maintainership & Philosophy (2013-12 to present)

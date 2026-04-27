@@ -1,10 +1,11 @@
 import SwiftUI
+import ZorkUI
 
 @main
 struct ZorkApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ZorkGameView()
                 .preferredColorScheme(.dark)
         }
     }
